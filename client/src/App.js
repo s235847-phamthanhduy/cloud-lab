@@ -5,15 +5,14 @@ function App() {
   const [studentId, setStudentId] = useState('');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [editingId, setEditingId] = useState(null); // Luu ID sinh vien dang sua
 
-  // Cau 47: Lay danh sach sinh vien tu Backend API
+  // Fetch danh sach sinh vien
   const fetchStudents = async () => {
     try {
       const res = await fetch('/api/students');
       const data = await res.json();
-      if (Array.isArray(data)) {
-        setStudents(data);
-      }
+      if (Array.isArray(data)) setStudents(data);
     } catch (error) {
       console.error('Loi khi lay danh sach:', error);
     }
@@ -23,31 +22,59 @@ function App() {
     fetchStudents();
   }, []);
 
-  // Cau 48 & 49: Them sinh vien moi qua Form
+  // Them hoac Cap nhat sinh vien (Cau 61 & Form)
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch('/api/students', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ studentId, name, email })
-      });
-      if (res.ok) {
-        setStudentId('');
-        setName('');
-        setEmail('');
-        fetchStudents();
+      if (editingId) {
+        // Cau 61: PUT /api/students/:id - Cap nhat
+        const res = await fetch(`/api/students/${editingId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ studentId, name, email })
+        });
+        if (res.ok) setEditingId(null);
+      } else {
+        // POST /api/students - Them moi
+        await fetch('/api/students', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ studentId, name, email })
+        });
       }
+      setStudentId('');
+      setName('');
+      setEmail('');
+      fetchStudents();
     } catch (error) {
-      console.error('Loi khi them sinh vien:', error);
+      console.error('Loi khi xu ly:', error);
     }
+  };
+
+  // Cau 62: DELETE /api/students/:id - Xoa sinh vien
+  const handleDelete = async (id) => {
+    if (window.confirm('Ban co chac muon xoa sinh vien nay?')) {
+      try {
+        const res = await fetch(`/api/students/${id}`, { method: 'DELETE' });
+        if (res.ok) fetchStudents();
+      } catch (error) {
+        console.error('Loi khi xoa:', error);
+      }
+    }
+  };
+
+  // Chuan bi dữ liệu để Sửa
+  const handleEdit = (st) => {
+    setEditingId(st._id);
+    setStudentId(st.studentId);
+    setName(st.name);
+    setEmail(st.email);
   };
 
   return (
     <div style={{ padding: '20px', fontFamily: 'sans-serif' }}>
       <h2>Quan Ly Sinh Vien</h2>
 
-      {/* Form nhap lieu (Cau 48) */}
       <form onSubmit={handleSubmit} style={{ marginBottom: '20px' }}>
         <input
           type="text"
@@ -73,15 +100,37 @@ function App() {
           required
           style={{ marginRight: '10px' }}
         />
-        <button type="submit">Them Sinh Vien</button>
+        <button type="submit">
+          {editingId ? 'Cap Nhat' : 'Them Sinh Vien'}
+        </button>
+        {editingId && (
+          <button
+            type="button"
+            onClick={() => {
+              setEditingId(null);
+              setStudentId('');
+              setName('');
+              setEmail('');
+            }}
+            style={{ marginLeft: '10px' }}
+          >
+            Huy
+          </button>
+        )}
       </form>
 
-      {/* Danh sach hiển thị (Cau 47) */}
       <h3>Danh sach sinh vien</h3>
       <ul>
         {students.map((st) => (
-          <li key={st._id}>
-            {st.studentId} - {st.name} ({st.email})
+          <li key={st._id} style={{ marginBottom: '8px' }}>
+            {st.studentId} - {st.name} ({st.email}){' '}
+            <button
+              onClick={() => handleEdit(st)}
+              style={{ marginLeft: '10px', marginRight: '5px' }}
+            >
+              Sua
+            </button>
+            <button onClick={() => handleDelete(st._id)}>Xoa</button>
           </li>
         ))}
       </ul>
