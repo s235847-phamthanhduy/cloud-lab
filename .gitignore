@@ -2,3 +2,6 @@
 *.tmp
 __pycache__/
 .env
+node_modules
+.env
+node_modules
