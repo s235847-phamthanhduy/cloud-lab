@@ -1,0 +1,25 @@
+services:
+  backend:
+    image: maxximumfun2005/mern-backend:1.0
+    container_name: mern-backend
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - MONGODB_URI=${MONGODB_URI}
+    networks:
+      - mern-network
+
+  frontend:
+    image: maxximumfun2005/mern-frontend:1.0
+    container_name: mern-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - mern-network
+
+networks:
+  mern-network:
+    driver: bridge
